@@ -35,8 +35,8 @@ instance (FromJSON a) => FromJSON (APIResp a) where
       Nothing -> APIResp <$> Left <$> v .: "error"
   parseJSON _ = fail "Expecting Object"
 
-getFriends :: String -> IO [Profile]
-getFriends x = do
+getFriends :: Profile -> IO [Profile]
+getFriends (Profile { uid = x }) = do
   r <- post "https://api.vk.com/method/friends.get"
     ["user_id" := x,
      "fields" := ("first_name,last_name" :: String),
@@ -44,5 +44,18 @@ getFriends x = do
   let resp = decode $ r ^. responseBody :: Maybe (APIResp [Profile])
   case resp of
     Just (APIResp (Right x)) -> return x
+    Just (APIResp (Left  x)) -> fail $ "API error: " ++ show x
+    _ -> undefined
+
+-- TODO: Move duplicate code from get{Friends, User} to a separate function
+getUser :: Int -> IO Profile
+getUser x = do
+  r <- post "https://api.vk.com/method/users.get"
+    ["user_ids" := x,
+     "fields" := ("first_name,last_name" :: String),
+     "lang" := ("en" :: String)]
+  let resp = decode $ r ^. responseBody :: Maybe (APIResp [Profile])
+  case resp of
+    Just (APIResp (Right x)) -> return $ head x
     Just (APIResp (Left  x)) -> fail $ "API error: " ++ show x
     _ -> undefined
