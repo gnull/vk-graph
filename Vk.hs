@@ -30,8 +30,9 @@ instance (FromJSON a) => FromJSON (APIResp a) where
   parseJSON (Object v) = do
     x <- v .:? "response"
     case x of
-      Just y  -> let (Success z) = fromJSON y in
-        return $ APIResp $ Right z
+      Just y  -> case fromJSON y of
+        Success z -> return $ APIResp $ Right z
+        Error   z -> error z
       Nothing -> APIResp <$> Left <$> v .: "error"
   parseJSON _ = fail "Expecting Object"
 
