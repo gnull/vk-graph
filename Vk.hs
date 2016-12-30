@@ -34,7 +34,7 @@ instance (FromJSON a) => FromJSON (APIResp a) where
         Success z -> return $ APIResp $ Right z
         Error   z -> error z
       Nothing -> APIResp <$> Left <$> v .: "error"
-  parseJSON _ = fail "Expecting Object"
+  parseJSON x = fail $ "Expecting Object, got: " ++ show x
 
 getFriends :: Profile -> IO [Profile]
 getFriends (Profile { uid = x }) = do
