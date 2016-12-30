@@ -10,13 +10,39 @@ import Data.ByteString.Lazy (ByteString)
 
 import Control.Lens ((^.))
 
+import Data.Aeson (FromJSON(..), fromJSON, Value(..), (.:), (.:?), decode)
+import Data.Aeson.Types (Result(..))
+
 data Profile = Profile { firstName :: String, lastName :: String, uid :: Int }
   deriving (Show)
 
-getFriends :: String -> IO ByteString
+instance FromJSON Profile where
+  parseJSON (Object v) =
+    Profile <$> v .: "first_name"
+            <*> v .: "last_name"
+            <*> v .: "uid"
+
+type APIErr = Value
+
+newtype APIResp a = APIResp (Either APIErr a) deriving (Show)
+
+instance (FromJSON a) => FromJSON (APIResp a) where
+  parseJSON (Object v) = do
+    x <- v .:? "response"
+    case x of
+      Just y  -> let (Success z) = fromJSON y in
+        return $ APIResp $ Right z
+      Nothing -> APIResp <$> Left <$> v .: "error"
+  parseJSON _ = fail "Expecting Object"
+
+getFriends :: String -> IO [Profile]
 getFriends x = do
   r <- post "https://api.vk.com/method/friends.get"
     ["user_id" := x,
      "fields" := ("first_name,last_name" :: String),
      "lang" := ("en" :: String)]
-  return $ r ^. responseBody
+  let resp = decode $ r ^. responseBody :: Maybe (APIResp [Profile])
+  case resp of
+    Just (APIResp (Right x)) -> return x
+    Just (APIResp (Left  x)) -> fail $ "API error: " ++ show x
+    _ -> undefined
