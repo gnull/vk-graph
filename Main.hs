@@ -1,3 +1,3 @@
-import Vk (getFriends)
+import Vk (getFriends, getUser)
 
-main = getFriends "210700286" >>= print
+main = getUser 210700286 >>= getFriends >>= print
