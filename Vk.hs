@@ -36,6 +36,15 @@ instance (FromJSON a) => FromJSON (APIResp a) where
       Nothing -> APIResp <$> Left <$> v .: "error"
   parseJSON x = fail $ "Expecting Object, got: " ++ show x
 
+reqAPI :: (FromJSON a) => String -> [FormParam] -> IO (APIResp a)
+reqAPI method params = do
+  let defparams = ["lang" := ("en" :: String)]
+  r <- post ("https://api.vk.com/method/" ++ method) (params ++ defparams)
+  case decode $ r ^. responseBody of
+    Just (APIResp (Right x)) -> return x
+    Just (APIResp (Left  x)) -> fail $ "VK API error: " ++ show x
+    Nothing -> undefined
+
 getFriends :: Profile -> IO [Profile]
 getFriends (Profile { uid = x }) = do
   r <- post "https://api.vk.com/method/friends.get"
