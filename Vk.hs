@@ -1,6 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Vk where
 
+import Prelude ()
+import Prelude.Compat
+
 import Network.Wreq (post, Response, FormParam((:=)), responseBody)
 
 import Data.ByteString.Lazy (ByteString)
