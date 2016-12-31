@@ -36,7 +36,7 @@ instance (FromJSON a) => FromJSON (APIResp a) where
       Nothing -> APIResp <$> Left <$> v .: "error"
   parseJSON x = fail $ "Expecting Object, got: " ++ show x
 
-reqAPI :: (FromJSON a) => String -> [FormParam] -> IO (APIResp a)
+reqAPI :: (FromJSON a) => String -> [FormParam] -> IO a
 reqAPI method params = do
   let defparams = ["lang" := ("en" :: String)]
   r <- post ("https://api.vk.com/method/" ++ method) (params ++ defparams)
