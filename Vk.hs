@@ -46,26 +46,11 @@ reqAPI method params = do
     Nothing -> undefined
 
 getFriends :: Profile -> IO [Profile]
-getFriends (Profile { uid = x }) = do
-  r <- post "https://api.vk.com/method/friends.get"
-    ["user_id" := x,
-     "fields" := ("first_name,last_name" :: String),
-     "lang" := ("en" :: String)]
-  let resp = decode $ r ^. responseBody :: Maybe (APIResp [Profile])
-  case resp of
-    Just (APIResp (Right x)) -> return x
-    Just (APIResp (Left  x)) -> fail $ "API error: " ++ show x
-    _ -> undefined
+getFriends (Profile { uid = x }) = reqAPI "friends.get"
+  ["user_id" := x,
+   "fields" := ("first_name,last_name" :: String)]
 
--- TODO: Move duplicate code from get{Friends, User} to a separate function
 getUser :: Int -> IO Profile
-getUser x = do
-  r <- post "https://api.vk.com/method/users.get"
-    ["user_ids" := x,
-     "fields" := ("first_name,last_name" :: String),
-     "lang" := ("en" :: String)]
-  let resp = decode $ r ^. responseBody :: Maybe (APIResp [Profile])
-  case resp of
-    Just (APIResp (Right x)) -> return $ head x
-    Just (APIResp (Left  x)) -> fail $ "API error: " ++ show x
-    _ -> undefined
+getUser x = head <$> reqAPI "users.get"
+  ["user_ids" := x,
+   "fields" := ("first_name,last_name" :: String)]
