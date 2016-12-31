@@ -9,6 +9,7 @@ import Network.Wreq (post, Response, FormParam((:=)), responseBody)
 import Data.ByteString.Lazy (ByteString)
 
 import Control.Lens ((^.))
+import Control.Monad (mapM)
 
 import Data.Aeson (FromJSON(..), fromJSON, Value(..), (.:), (.:?), decode)
 import Data.Aeson.Types (Result(..))
@@ -60,3 +61,9 @@ getUsers xs = reqAPI "users.get"
 
 getUser :: Int -> IO Profile
 getUser x = head <$> getUsers [x]
+
+getFF :: Int -> Profile -> IO [Profile]
+getFF 0 p = return [p]
+getFF d p = do
+  fs  <- getFF (d - 1) p
+  concat <$> mapM getFriends fs
