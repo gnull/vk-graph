@@ -13,6 +13,8 @@ import Control.Lens ((^.))
 import Data.Aeson (FromJSON(..), fromJSON, Value(..), (.:), (.:?), decode)
 import Data.Aeson.Types (Result(..))
 
+import Data.List (intercalate)
+
 data Profile = Profile { firstName :: String, lastName :: String, uid :: Int }
   deriving (Show)
 
@@ -50,7 +52,11 @@ getFriends (Profile { uid = x }) = reqAPI "friends.get"
   ["user_id" := x,
    "fields" := ("first_name,last_name" :: String)]
 
+getUsers :: [Int] -> IO [Profile]
+getUsers xs = reqAPI "users.get"
+  ["user_ids" := ids,
+   "fields" := ("first_name,last_name" :: String)] where
+     ids = intercalate "," $ map show xs
+
 getUser :: Int -> IO Profile
-getUser x = head <$> reqAPI "users.get"
-  ["user_ids" := x,
-   "fields" := ("first_name,last_name" :: String)]
+getUser x = head <$> getUsers [x]
