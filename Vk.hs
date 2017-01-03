@@ -26,6 +26,9 @@ instance FromJSON Profile where
             <*> v .: "last_name"
             <*> v .: "uid"
 
+instance Eq Profile where
+  (Profile _ _ uid) == (Profile _ _ uid') = uid == uid'
+
 data APIErrCode =
   APIErrUnknown Int
   | APIErrPermDenied
