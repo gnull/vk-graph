@@ -15,6 +15,7 @@ import Data.Aeson (FromJSON(..), fromJSON, Value(..), (.:), (.:?), decode)
 import Data.Aeson.Types (Result(..))
 
 import Data.List (intercalate)
+import Data.Maybe (fromMaybe)
 
 data Profile = Profile { firstName :: String, lastName :: String, uid :: Int }
   deriving (Show)
@@ -25,7 +26,25 @@ instance FromJSON Profile where
             <*> v .: "last_name"
             <*> v .: "uid"
 
-type APIErr = Value
+data APIErrCode =
+  APIErrUnknown Int
+  | APIErrPermDenied
+--  ...
+--  Other error types are to be added when necessary
+    deriving (Show)
+
+instance FromJSON APIErrCode where
+  parseJSON n = do
+    n <- parseJSON n
+    return $ fromMaybe (APIErrUnknown n) (lookup n m)
+   where m = [(15, APIErrPermDenied)]
+
+data APIErr = APIErr APIErrCode String deriving (Show)
+
+instance FromJSON APIErr where
+  parseJSON (Object v) =
+    APIErr <$> v .: "error_code"
+           <*> v .: "error_msg"
 
 newtype APIResp a = APIResp (Either APIErr a) deriving (Show)
 
