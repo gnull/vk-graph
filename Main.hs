@@ -1,3 +1,3 @@
-import Vk (getFriends, getUser)
+import Vk (getFriends, getUser, getFF)
 
-main = getUser 210700286 >>= getFriends >>= print
+main = length <$> (getUser 210700286 >>= getFF 2) >>= print
