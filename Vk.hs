@@ -45,7 +45,7 @@ reqAPI method params = do
   r <- post ("https://api.vk.com/method/" ++ method) (params ++ defparams)
   case decode $ r ^. responseBody of
     Just (APIResp (Right x)) -> return x
-    Just (APIResp (Left  x)) -> fail $ "VK API error: " ++ show x
+    Just (APIResp (Left  x)) -> fail $ show x
     Nothing -> undefined
 
 getFriends :: Profile -> IO [Profile]
