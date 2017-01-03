@@ -15,7 +15,7 @@ import Data.Aeson (FromJSON(..), fromJSON, Value(..), (.:), (.:?), decode)
 import Data.Aeson.Types (Result(..))
 
 import Data.List (intercalate)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, fromJust)
 
 data Profile = Profile { firstName :: String, lastName :: String, uid :: Int }
   deriving (Show)
@@ -58,22 +58,26 @@ instance (FromJSON a) => FromJSON (APIResp a) where
       Nothing -> APIResp <$> Left <$> v .: "error"
   parseJSON x = fail $ "Expecting Object, got: " ++ show x
 
-reqAPI :: (FromJSON a) => String -> [FormParam] -> IO a
+reqAPI :: (FromJSON a) => String -> [FormParam] -> IO (APIResp a)
 reqAPI method params = do
   let defparams = ["lang" := ("en" :: String)]
   r <- post ("https://api.vk.com/method/" ++ method) (params ++ defparams)
-  case decode $ r ^. responseBody of
-    Just (APIResp (Right x)) -> return x
-    Just (APIResp (Left  x)) -> fail $ show x
-    Nothing -> undefined
+  return $ fromJust $ decode $ r ^. responseBody
+
+-- Temporary function to call reqAPI ignoring some errors returned from server
+reqAPI' :: (FromJSON a) => a -> String -> [FormParam] -> IO a
+reqAPI' def method params = f <$> reqAPI method params where
+  f (APIResp (Right a)) = a
+  f (APIResp (Left  (APIErr APIErrPermDenied _))) = def
+  f (APIResp (Left  a)) = error $ show a
 
 getFriends :: Profile -> IO [Profile]
-getFriends (Profile { uid = x }) = reqAPI "friends.get"
+getFriends (Profile { uid = x }) = reqAPI' [] "friends.get"
   ["user_id" := x,
    "fields" := ("first_name,last_name" :: String)]
 
 getUsers :: [Int] -> IO [Profile]
-getUsers xs = reqAPI "users.get"
+getUsers xs = reqAPI' [] "users.get"
   ["user_ids" := ids,
    "fields" := ("first_name,last_name" :: String)] where
      ids = intercalate "," $ map show xs
