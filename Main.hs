@@ -20,6 +20,6 @@ main = do
   putStrLn "graph {"
   mapM (putStrLn . toDot) fs
   forM fs $ \x -> do
-    adj <- filter (flip elem fs) <$> getFriends x
+    adj <- filter ((< uid x) . uid) <$> filter (flip elem fs) <$> getFriends x
     mapM (putStrLn . toDot . (,) x) adj
   putStrLn "}"
